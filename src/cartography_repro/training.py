@@ -182,6 +182,7 @@ def run(config: dict, *, max_train_examples: int | None = None, smoke: bool = Fa
     trainer.save_model(str(out / "final"))
     results = {
         "subset": config.get("subset", "full"), "seed": seed,
+        "subset_seed": config.get("subset_seed"),
         "num_train_examples": len(train), "physical_batch_size": physical,
         "gradient_accumulation": accumulation,
         "effective_batch_size": effective_batch(physical, accumulation),

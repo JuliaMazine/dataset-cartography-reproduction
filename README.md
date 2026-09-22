@@ -56,6 +56,12 @@ uv run python scripts/train_snli.py --config configs/snli_hard33.yaml
 
 The paper reports the best of three seeds. The released config specifies seed 93078; the other reporting seeds are unknown. For additional seeds, copy a config and change `seed` and `output_dir`. Change the random subset seed with `build_subsets.py --seed N` before random runs. Do not combine results from different random manifests without recording their seeds.
 
+## Unattended local run
+
+`scripts/run_overnight_pipeline.sh` waits for the full-data systemd user service, validates its measured ID and OOD accuracies, then runs random 33%, ambiguous 33%, and hard-to-learn 33% sequentially. It generates the result tables and locally measured data map afterward. It refuses to start another condition when less than 10 minutes remain in its 18-hour budget, and each condition has a timeout at the remaining deadline. The queue writes `outputs/overnight_pipeline.log`; each condition also writes `outputs/checkpoints/<condition>/metrics.json`.
+
+The queue requires the prepared data and project `.venv`. To survive logout, the account must have user-service lingering enabled (`loginctl show-user "$USER" -p Linger`). Monitor with `systemctl --user status dataset-cartography-queue.service --no-pager` and `tail -f outputs/overnight_pipeline.log`. A failed dependency or missing accuracy stops the queue rather than reporting a paper reference value as a result. Synthetic label-noise experiments are not queued.
+
 ## Evaluation and map reconstruction
 
 ```bash

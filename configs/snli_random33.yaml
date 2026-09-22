@@ -1,6 +1,7 @@
 subset: random33
 model: roberta-large
 seed: 93078
+subset_seed: 725862
 train_file: data/snli/train.tsv
 dev_file: data/snli/dev.tsv
 test_file: data/snli/test.tsv
