@@ -29,10 +29,10 @@ def effective_batch(physical: int, accumulation: int, devices: int = 1) -> int:
     return physical * accumulation * devices
 
 
-def tokenized(frame: pd.DataFrame, tokenizer, max_length: int, *, include_id: bool = False) -> Dataset:
+def tokenized(frame: pd.DataFrame, tokenizer, max_length: int, *, include_id: bool = False, static_padding: bool = True) -> Dataset:
     columns = ["premise", "hypothesis", "label_id"] + (["example_id"] if include_id else [])
     data = Dataset.from_pandas(frame[columns].rename(columns={"label_id": "labels"}), preserve_index=False)
-    return data.map(lambda batch: tokenizer(batch["premise"], batch["hypothesis"], truncation=True, padding="max_length", max_length=max_length), batched=True, remove_columns=["premise", "hypothesis"])
+    return data.map(lambda batch: tokenizer(batch["premise"], batch["hypothesis"], truncation=True, padding="max_length" if static_padding else False, max_length=max_length), batched=True, remove_columns=["premise", "hypothesis"])
 
 
 class IdCollator:
@@ -115,6 +115,9 @@ def run(config: dict, *, max_train_examples: int | None = None, smoke: bool = Fa
             raise ValueError("Subset IDs missing from SNLI")
     if max_train_examples:
         train = train.sample(n=min(max_train_examples, len(train)), random_state=seed)
+    if smoke:
+        dev = dev.head(200)
+        test = test.head(200)
     checkpoint = config.get("model", "roberta-large")
     if checkpoint != "roberta-large" and not config.get("allow_other_model", False):
         raise ValueError("Reproduction requires roberta-large")
@@ -122,6 +125,12 @@ def run(config: dict, *, max_train_examples: int | None = None, smoke: bool = Fa
     out.mkdir(parents=True, exist_ok=True)
     tokenizer = AutoTokenizer.from_pretrained(checkpoint, use_fast=True)
     model = make_model(checkpoint)
+    max_length = int(config.get("max_length", 128))
+    static_padding = not bool(config.get("dynamic_padding", False))
+
+    def prepare(frame: pd.DataFrame, *, include_id: bool = False) -> Dataset:
+        return tokenized(frame, tokenizer, max_length, include_id=include_id, static_padding=static_padding)
+
     if config.get("gradient_checkpointing", False):
         model.gradient_checkpointing_enable()
     physical = int(config.get("physical_batch_size", 2))
@@ -143,8 +152,7 @@ def run(config: dict, *, max_train_examples: int | None = None, smoke: bool = Fa
         lr_scheduler_type="linear", optim="adamw_torch",
         bf16=use_bf16, fp16=bool(torch.cuda.is_available() and not use_bf16),
         eval_strategy="epoch" if not smoke else "no",
-        save_strategy="epoch" if not smoke else "steps",
-        save_steps=10 if smoke else 500,
+        save_strategy="epoch" if not smoke else "no",
         save_total_limit=2,
         load_best_model_at_end=not smoke,
         metric_for_best_model="accuracy" if not smoke else None,
@@ -157,8 +165,8 @@ def run(config: dict, *, max_train_examples: int | None = None, smoke: bool = Fa
         gradient_checkpointing=bool(config.get("gradient_checkpointing", False)),
     )
     trainer = CartographyTrainer(
-        model=model, args=args, train_dataset=tokenized(train, tokenizer, int(config.get("max_length", 128)), include_id=bool(config.get("record_dynamics", False)) and not smoke),
-        eval_dataset=tokenized(dev, tokenizer, int(config.get("max_length", 128))) if not smoke else None,
+        model=model, args=args, train_dataset=prepare(train, include_id=bool(config.get("record_dynamics", False)) and not smoke),
+        eval_dataset=prepare(dev) if not smoke else None,
         processing_class=tokenizer, data_collator=IdCollator(tokenizer),
         dynamics_dir=out / "training_dynamics" if config.get("record_dynamics", False) and not smoke else None,
         compute_metrics=lambda p: {"accuracy": accuracy(p.label_ids, np.argmax(p.predictions, axis=-1)) / 100},
@@ -170,28 +178,30 @@ def run(config: dict, *, max_train_examples: int | None = None, smoke: bool = Fa
     resume = config.get("resume_checkpoint")
     trainer.train(resume_from_checkpoint=resume if resume else None)
     trainer.close_dynamics()
-    runtime = (time.monotonic() - started) / 60
+    train_minutes = (time.monotonic() - started) / 60
     trainer.save_model(str(out / "final"))
     results = {
         "subset": config.get("subset", "full"), "seed": seed,
         "num_train_examples": len(train), "physical_batch_size": physical,
         "gradient_accumulation": accumulation,
         "effective_batch_size": effective_batch(physical, accumulation),
-        "runtime_minutes": runtime,
+        "runtime_minutes": train_minutes, "train_minutes": train_minutes,
         "peak_vram_mb": torch.cuda.max_memory_reserved() / 2**20 if torch.cuda.is_available() else None,
         "peak_allocated_mb": torch.cuda.max_memory_allocated() / 2**20 if torch.cuda.is_available() else None,
-        "id_accuracy": accuracy(test.label_id.to_numpy(), np.argmax(trainer.predict(tokenized(test, tokenizer, int(config.get("max_length", 128)))).predictions, axis=-1)),
-        "validation_accuracy": accuracy(dev.label_id.to_numpy(), np.argmax(trainer.predict(tokenized(dev, tokenizer, int(config.get("max_length", 128)))).predictions, axis=-1)),
+        "id_accuracy": accuracy(test.label_id.to_numpy(), np.argmax(trainer.predict(prepare(test)).predictions, axis=-1)),
+        "validation_accuracy": accuracy(dev.label_id.to_numpy(), np.argmax(trainer.predict(prepare(dev)).predictions, axis=-1)),
         "ood_accuracy": None,
         "model": checkpoint, "learning_rate": args.learning_rate,
         "epochs": trainer.state.epoch, "max_epochs": args.num_train_epochs,
         "optimizer_steps": trainer.state.global_step,
         "best_checkpoint": trainer.state.best_model_checkpoint,
-        "max_length": int(config.get("max_length", 128)), "mixed_precision": "bf16" if use_bf16 else "fp16" if args.fp16 else "fp32",
+        "max_length": max_length, "dynamic_padding": not static_padding,
+        "gradient_checkpointing": bool(config.get("gradient_checkpointing", False)),
+        "mixed_precision": "bf16" if use_bf16 else "fp16" if args.fp16 else "fp32",
     }
     if not smoke and config.get("diagnostics_file"):
         diag = read_diagnostics(config["diagnostics_file"])
-        pred = trainer.predict(tokenized(diag, tokenizer, int(config.get("max_length", 128))))
+        pred = trainer.predict(prepare(diag))
         results["ood_accuracy"] = accuracy(diag.label_id.to_numpy(), np.argmax(pred.predictions, axis=-1))
     results["runtime_minutes"] = (time.monotonic() - started) / 60
     if torch.cuda.is_available():

@@ -11,7 +11,7 @@ Sources: [paper](https://aclanthology.org/2020.emnlp-main.746.pdf), [original SN
 | Scheduler | Linear decay, zero warmup steps | Exact: training code and parameter defaults |
 | Max token length | 128 | Exact: parameter default, absent from SNLI config |
 | Map epochs | Six, from epochs 0–5 | Exact: Appendix A.3 and released coordinate filename |
-| Fine-tuning epochs | Config cap 23, patience 3; paper says six | **Conflicting evidence.** Paper Appendix A.3 says six; config uses cap 23 and early stopping. This implementation follows the released config and selects the best validation checkpoint. It may stop after a different number of epochs. |
+| Fine-tuning epochs | Config cap 23, patience 3; paper says six | **Conflicting evidence.** Paper Appendix A.3 says six; config uses cap 23 and early stopping. For the time-bounded reproduction, this implementation caps at six, uses patience 3, and selects the best validation checkpoint. |
 | Seed | 93078 for released SNLI config | Exact: config. Other two reporting seeds not published in repository config; uncertain. |
 | Selection fraction | 0.3319, `int(fraction*N)+1` for coordinate subsets | Exact: selection code. Random baseline uses 0.33 and `int(fraction*N)` in separate script. |
 | Ambiguous | Highest variability | Exact: README and selection code |
@@ -30,6 +30,6 @@ The released SNLI coordinates are from one map run. Its selected IDs are used be
 
 ## Necessary deviations on a 16 GB GPU
 
-The original experiment used a Quadro RTX 8000 and physical batch 96. Here physical batch 2 plus 48 accumulation steps matches effective batch 96. BF16 (or FP16) and gradient checkpointing reduce memory use. Optimizer steps and numerical rounding can still differ from the original. Modern `transformers` also differs from the 2020 implementation. These are methodological deviations and should be considered when interpreting accuracy differences.
+The original experiment used a Quadro RTX 8000 and physical batch 96. Here physical batch 32 plus three accumulation steps matches effective batch 96. BF16 reduces memory use. Dynamic padding preserves the 128-token truncation limit and attention masking while avoiding computation on padding tokens. A 2,000-example, 20-step benchmark measured about 346 examples/second and 9,292 MiB peak reserved VRAM on the RTX 4070 Ti SUPER. The benchmark does not guarantee the same speed on full SNLI. Optimizer steps and numerical rounding can still differ from the original. Modern `transformers` also differs from the 2020 implementation.
 
 The original diagnostics source path is a private absolute path (`diagnostic-full.tsv`). The public original is [GLUE diagnostic-full.tsv](https://dl.fbaipublicfiles.com/glue/data/diagnostic-full.tsv). Direct inspection found 1,105 physical lines: one header and 1,104 labeled examples. Table 5's 1,105 likely includes the header. The separate GLUE AX file is unlabeled and must not be substituted.
