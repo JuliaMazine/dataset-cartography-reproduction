@@ -1,0 +1,10 @@
+{
+  "num_examples": 548869,
+  "paper_examples": 549367,
+  "coverage": 0.9990935021579381,
+  "excluded_examples": 498,
+  "confidence": {"pearson": 0.9437612465213315, "spearman": 0.8878702079721328},
+  "variability": {"pearson": 0.7080440127964126, "spearman": 0.7718174051023521},
+  "ambiguous": {"overlap": 0.752324751605643, "jaccard": 0.6029812265441794},
+  "hard": {"overlap": 0.8215128725915354, "jaccard": 0.6970910869413327}
+}

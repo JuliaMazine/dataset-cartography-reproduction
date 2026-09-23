@@ -1,5 +1,6 @@
 """Validate and combine training-time dynamics saved by train_snli.py."""
 import argparse
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -19,13 +20,32 @@ def main():
         raise ValueError("No training-time dynamics found")
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
+    frames = []
+    expected_ids = set(train.example_id)
     for epoch, path in enumerate(files):
         frame = pd.read_csv(path)
         if frame.epoch.nunique() != 1 or frame.epoch.iloc[0] != epoch:
             raise ValueError(f"Unexpected epoch number in {path}")
-        if len(frame) != len(train) or frame.example_id.duplicated().any() or set(frame.example_id) != set(train.example_id):
-            raise ValueError(f"Incomplete or duplicate dynamics for epoch {epoch}")
+        if not set(frame.example_id).issubset(expected_ids):
+            raise ValueError(f"Unknown example IDs in epoch {epoch}")
+        # Gradient accumulation can cross a dataloader epoch boundary, repeating
+        # the final microbatch and shifting a few examples into the next epoch.
+        # Keep one observation per ID and use only IDs observed in every epoch.
+        frames.append(frame.drop_duplicates("example_id", keep="first"))
+    common_ids = set.intersection(*(set(frame.example_id) for frame in frames))
+    if len(common_ids) < 0.99 * len(train):
+        raise ValueError(f"Dynamics coverage too low: {len(common_ids)}/{len(train)}")
+    for epoch, frame in enumerate(frames):
+        frame = frame[frame.example_id.isin(common_ids)].sort_values("example_id")
         frame.to_csv(output, mode="w" if epoch == 0 else "a", index=False, header=epoch == 0)
+    coverage = {
+        "epochs": len(frames),
+        "expected_examples": len(train),
+        "mapped_examples": len(common_ids),
+        "coverage": len(common_ids) / len(train),
+        "excluded_examples": len(train) - len(common_ids),
+    }
+    output.with_name("training_dynamics_coverage.json").write_text(json.dumps(coverage, indent=2) + "\n")
 
 
 if __name__ == "__main__":

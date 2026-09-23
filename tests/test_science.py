@@ -87,7 +87,12 @@ def test_training_dynamics_capture_actual_forward_pass(tmp_path):
     trainer = CartographyTrainer(model=Tiny(), args=args, dynamics_dir=tmp_path / "dynamics")
     trainer.model.train()
     trainer.state.epoch = 0
-    batch = {"input_ids": torch.eye(3)[:2], "labels": torch.tensor([0, 1]), "example_id": torch.tensor([11, 12])}
+    device = trainer.args.device
+    batch = {
+        "input_ids": torch.eye(3, device=device)[:2],
+        "labels": torch.tensor([0, 1], device=device),
+        "example_id": torch.tensor([11, 12], device=device),
+    }
     trainer.compute_loss(trainer.model, batch)
     trainer.close_dynamics()
     recorded = pd.read_csv(tmp_path / "dynamics" / "epoch_0.csv")

@@ -4,18 +4,20 @@ This repository targets Table 3 of [Swayamdipta et al. (EMNLP 2020)](https://acl
 
 Designed for one NVIDIA RTX 4070 Ti SUPER with 16 GB VRAM and CUDA. Physical batch 32 with three accumulation steps reproduces effective batch 96. BF16 and dynamic padding keep the model within memory. See [recovered setup](docs/original_experiment.md) for exact settings, uncertainties, and deviations.
 
-## Reproduction status
+## Reproduction results
 
-| Experiment | Paper | Reproduction | Status |
-| --- | ---: | ---: | --- |
-| Full SNLI | 92.0 | TBD | Not run |
-| Random 33% SNLI | 91.3 | TBD | Not run |
-| Ambiguous 33% SNLI | 92.2 | TBD | Not run |
-| Full OOD | 61.8 | TBD | Not run |
-| Random 33% OOD | 60.4 | TBD | Not run |
-| Ambiguous 33% OOD | 63.5 | TBD | Not run |
+| Training data | Paper SNLI | Our SNLI | Paper Diagnostics | Our Diagnostics |
+| --- | ---: | ---: | ---: | ---: |
+| Full | 92.0 | **92.53** | 61.8 | **62.77** |
+| Random 33% | 91.3 | **91.82** | 60.4 | **62.05** |
+| Hard-to-learn 33% | 91.8 | **90.42** | 62.0 | **62.14** |
+| Ambiguous 33% | 92.2 | **92.19** | 63.5 | **64.31** |
 
-Generate measured comparison files with `uv run python scripts/paper_vs_reproduction.py`; missing results remain blank.
+The main finding reproduces cleanly: the ambiguous third reaches **92.19%**, essentially the paper's 92.2%, and beats the equally sized random third. It is within 0.34 points of our full-data result while using roughly one third of the training examples.
+
+![Paper versus reproduction accuracy](results/figures/accuracy_comparison.png)
+
+See [the full results and limitations](docs/results.md), [machine-readable metrics](results/reproduction_metrics.csv), and [map comparison](results/map_comparison.json). The paper reports the best of three seeds; this reproduction is one run with seed 93078.
 
 ## Setup
 
@@ -73,10 +75,20 @@ uv run python scripts/build_data_map.py
 uv run python scripts/compare_maps.py
 ```
 
-The full-data run records logits for each example during its training forward pass. Map reconstruction checks that each epoch contains every ID once, computes population standard deviation, and compares correlations and selected-ID overlap with the authors' map.
+The full-data run records logits during its training forward pass. The completed local map covers 548,869 of 549,367 examples (99.91%). The collector removes repeated boundary examples and excludes IDs without one observation in every logged epoch; it fails below 99% coverage. It then computes population standard deviation and compares correlations and selected-ID overlap with the authors' map. Coverage and limitations are recorded in [the results report](docs/results.md).
+
+## Presentation figures
+
+Regenerate the committed, slide-ready figures from the compact results table:
+
+```bash
+uv run python scripts/make_presentation_figures.py
+```
+
+The most useful slides are [paper vs. reproduction](results/figures/accuracy_comparison.png), [the 33% selection comparison](results/figures/selection_comparison.png), and [our reconstructed data map](results/figures/snli_data_map.png). The first two are generated entirely from `results/reproduction_metrics.csv`; no checkpoint or dataset download is needed after environment setup.
 
 ## Files
 
-`configs/` holds one YAML file per condition; `src/cartography_repro/` has data, selection, training, and evaluation functions; `scripts/` contains runnable commands; `docs/` records the recovered experiment; `tests/` holds small correctness checks. Generated manifests live in `data/manifests/`; measurements and plots live in `outputs/`.
+`configs/` holds one YAML file per condition; `src/cartography_repro/` has data, selection, training, and evaluation functions; `scripts/` contains runnable commands; `docs/` records the recovered experiment and measured results; `tests/` holds small correctness checks. Compact results and presentation figures are committed under `results/`. Generated manifests, full logs, training dynamics, and checkpoints remain in ignored `data/` and `outputs/` directories.
 
 The synthetic label-noise extension is deferred until the full/random/ambiguous numerical reproduction pipeline has completed, as specified by the experiment workflow. The deterministic corruption helper is included and tested, but noise training and detection claims are not part of current reproduction results.

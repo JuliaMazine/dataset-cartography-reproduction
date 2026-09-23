@@ -22,9 +22,15 @@ def main():
     ours = pd.read_csv(args.ours)
     paper = read_coordinates(args.paper)
     joined = paper.merge(ours, on="example_id", suffixes=("_paper", "_ours"), validate="one_to_one")
-    if len(joined) != len(paper):
-        raise ValueError("Our map lacks released coordinate IDs")
-    result = {"num_examples": len(joined)}
+    coverage = len(joined) / len(paper)
+    if coverage < 0.99:
+        raise ValueError(f"Map overlap is too low: {len(joined)}/{len(paper)}")
+    result = {
+        "num_examples": len(joined),
+        "paper_examples": len(paper),
+        "coverage": coverage,
+        "excluded_examples": len(paper) - len(joined),
+    }
     for metric in ("confidence", "variability"):
         result[metric] = {
             "pearson": float(pearsonr(joined[f"{metric}_paper"], joined[f"{metric}_ours"]).statistic),

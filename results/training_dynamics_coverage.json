@@ -1,0 +1,7 @@
+{
+  "epochs": 5,
+  "expected_examples": 549367,
+  "mapped_examples": 548869,
+  "coverage": 0.9990935021579381,
+  "excluded_examples": 498
+}
