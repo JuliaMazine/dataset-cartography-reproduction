@@ -5,3 +5,5 @@ data/
 outputs/*
 !outputs/.gitkeep
 *.egg-info/
+presentation/assets/generated/
+presentation/rendered/slides/

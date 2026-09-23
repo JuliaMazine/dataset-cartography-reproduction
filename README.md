@@ -19,6 +19,10 @@ The main finding reproduces cleanly: the ambiguous third reaches **92.19%**, ess
 
 See [the full results and limitations](docs/results.md), [machine-readable metrics](results/reproduction_metrics.csv), and [map comparison](results/map_comparison.json). The paper reports the best of three seeds; this reproduction is one run with seed 93078.
 
+## Presentation
+
+The complete 20–25 minute academic presentation is available as [dataset_cartography_reproduction.pptx](presentation/dataset_cartography_reproduction.pptx). It contains 20 main slides, five appendix slides, embedded speaker notes, real SNLI examples, paper methodology and findings, the reproduction protocol, numerical comparisons, and the reproduced map. See [presentation/README.md](presentation/README.md) for regeneration and rendering instructions.
+
 ## Setup
 
 ```bash
@@ -91,4 +95,4 @@ The most useful slides are [paper vs. reproduction](results/figures/accuracy_com
 
 `configs/` holds one YAML file per condition; `src/cartography_repro/` has data, selection, training, and evaluation functions; `scripts/` contains runnable commands; `docs/` records the recovered experiment and measured results; `tests/` holds small correctness checks. Compact results and presentation figures are committed under `results/`. Generated manifests, full logs, training dynamics, and checkpoints remain in ignored `data/` and `outputs/` directories.
 
-The synthetic label-noise extension is deferred until the full/random/ambiguous numerical reproduction pipeline has completed, as specified by the experiment workflow. The deterministic corruption helper is included and tested, but noise training and detection claims are not part of current reproduction results.
+Synthetic label-noise training is outside the scope of this reproduction. The repository includes a deterministic corruption helper and its correctness test, but no reported result relies on synthetic corruption and this project makes no new noise-detection claim. The original paper's label-noise experiment is discussed separately as a published finding.

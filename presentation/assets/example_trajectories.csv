@@ -1,0 +1,16 @@
+region,example_id,epoch,gold_probability,correct,premise,hypothesis,gold_label
+easy,1332867233141,1,0.999516,1,Two children are on the beach and are playing in the wet sand.,Two men are walking through a jungle.,contradiction
+easy,1332867233141,2,0.999773,1,Two children are on the beach and are playing in the wet sand.,Two men are walking through a jungle.,contradiction
+easy,1332867233141,3,0.999735,1,Two children are on the beach and are playing in the wet sand.,Two men are walking through a jungle.,contradiction
+easy,1332867233141,4,0.999885,1,Two children are on the beach and are playing in the wet sand.,Two men are walking through a jungle.,contradiction
+easy,1332867233141,5,0.999909,1,Two children are on the beach and are playing in the wet sand.,Two men are walking through a jungle.,contradiction
+ambiguous,2598979962211,1,0.016999,0,"A woman in a red shirt, white hat, and white shirts is playing tennis.","Dressed all in white, the woman practices her tennis.",contradiction
+ambiguous,2598979962211,2,0.001810,0,"A woman in a red shirt, white hat, and white shirts is playing tennis.","Dressed all in white, the woman practices her tennis.",contradiction
+ambiguous,2598979962211,3,0.019206,0,"A woman in a red shirt, white hat, and white shirts is playing tennis.","Dressed all in white, the woman practices her tennis.",contradiction
+ambiguous,2598979962211,4,0.996408,1,"A woman in a red shirt, white hat, and white shirts is playing tennis.","Dressed all in white, the woman practices her tennis.",contradiction
+ambiguous,2598979962211,5,0.996249,1,"A woman in a red shirt, white hat, and white shirts is playing tennis.","Dressed all in white, the woman practices her tennis.",contradiction
+hard,4696488386310,1,0.000257,0,Photographers take pictures of a girl sitting in a street.,The photographer is taking a picture of a boy.,entailment
+hard,4696488386310,2,0.000450,0,Photographers take pictures of a girl sitting in a street.,The photographer is taking a picture of a boy.,entailment
+hard,4696488386310,3,0.000697,0,Photographers take pictures of a girl sitting in a street.,The photographer is taking a picture of a boy.,entailment
+hard,4696488386310,4,0.000182,0,Photographers take pictures of a girl sitting in a street.,The photographer is taking a picture of a boy.,entailment
+hard,4696488386310,5,0.000245,0,Photographers take pictures of a girl sitting in a street.,The photographer is taking a picture of a boy.,entailment
