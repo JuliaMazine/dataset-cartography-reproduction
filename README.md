@@ -21,7 +21,7 @@ See [the full results and limitations](docs/results.md), [machine-readable metri
 
 ## Presentation
 
-The complete 20–25 minute academic presentation is available as [dataset_cartography_reproduction.pptx](presentation/dataset_cartography_reproduction.pptx). It contains 20 main slides, five appendix slides, embedded speaker notes, real SNLI examples, paper methodology and findings, the reproduction protocol, numerical comparisons, and the reproduced map. See [presentation/README.md](presentation/README.md) for regeneration and rendering instructions.
+The complete 20–25 minute academic presentation is available as [dataset_cartography_reproduction.pptx](presentation/dataset_cartography_reproduction.pptx). It contains 20 main slides, four appendix slides, embedded speaker notes, real SNLI examples, paper methodology and findings, the reproduction protocol, numerical comparisons, and the reproduced map. See [presentation/README.md](presentation/README.md) for regeneration and rendering instructions.
 
 ## Setup
 
