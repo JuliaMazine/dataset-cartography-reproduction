@@ -5,7 +5,7 @@
 ## Contents
 
 - 20 main slides: motivation, SNLI, training dynamics, formulas, data maps, original findings, reproduction protocol, ID/OOD results, map comparison, and conclusion;
-- 5 appendix slides: exact hyperparameters, run metrics, subset construction, full comparison, and environment;
+- 4 appendix slides: exact hyperparameters, run metrics, subset construction, and full comparison;
 - embedded presenter notes, also available as `speaker_notes.md`;
 - real SNLI examples and actual trajectories from the completed run;
 - exact measured results loaded from `results/reproduction_metrics.csv` and `results/run_metrics/`;
